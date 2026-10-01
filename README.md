@@ -1,4 +1,4 @@
-# J.A.R.V.I.S. — Personal AI (starter v0.1)
+# J.A.R.V.I.S. — Personal AI (v0.2)
 
 Prototipo funzionante con **React + TypeScript + Vite** e un backend **Node.js + Express**. Ha una rete neurale astratta animata su Canvas, chat, modalità studio, appunti locali, dettatura (nei browser compatibili) e risposta vocale opzionale.
 
@@ -22,7 +22,7 @@ Apri `http://localhost:5173`. Se non inserisci la chiave API, l'interfaccia funz
 - La chiave API rimane **solo nel backend**. Non inserirla in Vite, React o nella repository.
 - Le chat e gli appunti sono **locali al browser** (`localStorage`); non sono sincronizzati tra dispositivi. Per dati sensibili e sincronizzazione implementare login, crittografia e database in una release successiva.
 - Questa release **non ha accesso al computer** e **non esegue comandi**. Le automazioni arriveranno solo con una allowlist di strumenti e conferma esplicita prima di operazioni importanti.
-- Il riconoscimento vocale usa la Web Speech API quando supportata: a seconda del browser l'audio può essere elaborato dai servizi del fornitore. La sintesi vocale usa le voci del dispositivo/browser.
+- Il riconoscimento vocale usa la Web Speech API quando supportata: a seconda del browser l'audio può essere elaborato dai servizi del fornitore. La sintesi vocale usa OpenAI con voce `onyx`; in caso di errore può usare una voce del browser, non necessariamente maschile.
 - La rete neurale è una **visualizzazione artistica astratta**: non rappresenta i pesi o il ragionamento interno del modello AI.
 - Prima di esporre il backend su Internet: aggiungere autenticazione, rate limiting, persistenza sicura e controllo dei costi.
 
@@ -38,7 +38,7 @@ packages/
 
 ## Roadmap mobile
 
-1. Fase 1: web responsive (questa release), verificare UX con telefono nella rete locale.
+1. Fase 1: web responsive (questa release), interfaccia adattabile al telefono; accesso mobile al backend da configurare in una fase successiva.
 2. Fase 2: spostare tipi, client API e logica condivisa in `packages/shared`.
 3. Fase 3: creare `apps/mobile` con Expo / React Native; riusare backend e logica, realizzare l'interfaccia mobile nativa e notifiche push.
 4. Fase 4: autenticazione, database per chat/appunti sincronizzati, eventuale app desktop Electron.
@@ -50,3 +50,16 @@ Il tutor AI può spiegare concetti e fare quiz, ma non conosce automaticamente i
 ## Verifiche
 
 `npm run typecheck` e `npm run build`.
+
+## v0.2 — Voce, risveglio e memoria
+
+- **Voce AI**: `POST /api/speech`, modello `gpt-4o-mini-tts`, voce `onyx`, istruzioni per voce italiana maschile naturale. Audio MP3 dal backend; fallback alla voce italiana del browser, che non è necessariamente maschile. La voce generata è artificiale.
+- **Wake word sperimentale**: attiva dall'interfaccia «Hey Jarvis», poi pronuncia «Ciao Jarvis», «Buongiorno Jarvis», «Buonasera Jarvis», «Hey Jarvis» oppure «Jarvis». Dopo il riconoscimento si attiva il nucleo e viene pronunciato uno dei saluti variabili. Funziona solo mentre la pagina è aperta e il browser consente il microfono; usa la Web Speech API (eventuale trascrizione cloud del vendor browser). Non è sempre in ascolto con PC bloccato/scheda chiusa. Per quello servirà un servizio desktop e wake-word locale.
+- **Primo cervello persistente**: `GET/POST /api/memory`, `DELETE /api/memory/:id`, file JSON locale al server (mono-utente). Puoi aggiungere ricordi dalla sezione Memoria o con «Ricorda che ...». I ricordi vengono inseriti come contesto nella chat. NON è addestramento di neuroni o modifica dei pesi AI: il grafo animato è una visualizzazione; per una rete conoscitiva reale, aggiungere grafo indicizzato e recupero semantico.
+- **Skills**: `GET /api/skills` espone registro capacità e stato; tool esterni, automazioni e sincronizzazione multi-dispositivo rimangono disattivati.
+- **Privacy**: la memoria sul backend viene salvata nel percorso `apps/api/data/memory.json`, escluso da Git. Non esporre l'API su Internet: attualmente NON c'è autenticazione utente. Non avviare contemporaneamente più istanze dell'API sullo stesso archivio.
+- **Importante**: disattivare l'ascolto se non necessario; il browser può inviare l'audio a servizi di trascrizione. L'audio AI generato è a consumo secondo tariffe OpenAI.
+
+## Esecuzione locale
+
+Il backend ascolta solo su `127.0.0.1`: questa versione è mono-utente e non autenticata. Non pubblicare il proxy Vite su Internet. Le scritture della memoria sono serializzate nella singola istanza per evitare perdita di ricordi con richieste contemporanee.

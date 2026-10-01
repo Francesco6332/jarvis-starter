@@ -1,7 +1,9 @@
-node_modules
+node_modules/
 .env
-.env.local
-dist
+.env.*
+!.env.example
+dist/
 .DS_Store
 *.log
-.env.example
+*.tsbuildinfo
+apps/api/data/

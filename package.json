@@ -1,7 +1,7 @@
 {
   "name": "jarvis-personal-ai",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "concurrently -k -n API,WEB -c blue,cyan \"npm run dev -w @jarvis/api\" \"npm run dev -w @jarvis/web\"",
     "build": "npm run build -w @jarvis/api && npm run build -w @jarvis/web",
-    "typecheck": "npm run typecheck -w @jarvis/api && npm run typecheck -w @jarvis/web"
+    "typecheck": "npm run typecheck -w @jarvis/api && npm run typecheck -w @jarvis/web",
+    "test": "npm run build -w @jarvis/api && node --import tsx --test apps/api/test/*.test.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

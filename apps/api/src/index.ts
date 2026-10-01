@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import { z } from 'zod';
@@ -6,10 +6,33 @@ import { promises as fs } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
+import { createCalendar } from './calendar.js';
+import { createWork } from './work.js';
+import { chatStream } from './agent.js';
+
+// Resolve beside the API package, whether running src/index.ts or dist/index.js.
+const envPath = fileURLToPath(new URL('../.env', import.meta.url));
+const envResult = config({ path: envPath });
+process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY?.trim() || '';
+if (!process.env.OPENAI_API_KEY) {
+  const reason = envResult.error
+    ? `file non leggibile (${(envResult.error as NodeJS.ErrnoException).code || 'errore'})`
+    : 'OPENAI_API_KEY assente o vuota';
+  console.warn(`[JARVIS] Modalità demo: ${reason}. File atteso: ${envPath}. Riavvia il backend dopo averlo modificato.`);
+} else {
+  console.log('[JARVIS] Chiave API caricata. La validità sarà verificata alla prima richiesta AI.');
+}
 
 const app = express();
 app.disable('x-powered-by');
-app.use(express.json({ limit: '100kb' }));
+app.use((req, res, next) => {
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(req.hostname)) { res.status(403).json({ error: 'Host non autorizzato.' }); return; }
+  const origin = req.headers.origin;
+  if (origin && origin !== (process.env.WEB_ORIGIN || 'http://localhost:5173')) { res.status(403).json({ error: 'Origine non autorizzata.' }); return; }
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers['x-jarvis-client'] !== 'web') { res.status(403).json({ error: 'Richiesta non autorizzata.' }); return; }
+  next();
+});
+app.use(express.json({ limit: '200kb' }));
 app.use(cors({ origin: process.env.WEB_ORIGIN || 'http://localhost:5173' }));
 
 const messageSchema = z.object({
@@ -19,6 +42,11 @@ const messageSchema = z.object({
 
 // JSON persistente per il prototipo mono-utente; sostituire con DB autenticato per mobile/cloud.
 const dataDir = process.env.JARVIS_DATA_DIR || join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
+const calendar = createCalendar(dataDir);
+const work = createWork(dataDir, calendar);
+app.use('/api/google', calendar.router);
+app.use('/api/workspace', work.router);
+app.post('/api/chat/stream', chatStream(work, readMemories));
 const memoryFile = join(dataDir, 'memory.json');
 const memorySchema = z.object({ id: z.string(), content: z.string().min(1).max(500), createdAt: z.string() });
 type Memory = z.infer<typeof memorySchema>;
@@ -44,6 +72,8 @@ const skills = [
   { id: 'study', name: 'Tutor universitario', enabled: true },
   { id: 'memory', name: 'Memoria esplicita', enabled: true },
   { id: 'voice', name: 'Voce AI maschile', enabled: true },
+  { id: 'calendar', name: 'Google Calendar (richiede connessione e permessi)', enabled: true },
+  { id: 'study-tasks', name: 'Attività di studio', enabled: true },
   { id: 'device-control', name: 'Controllo dispositivi', enabled: false }
 ];
 app.get('/api/skills', (_req, res) => res.json({ skills }));
@@ -69,6 +99,7 @@ app.post('/api/speech', async (req, res) => {
   if (!parsed.success) { res.status(400).json({ error: 'Testo non valido.' }); return; }
   if (!process.env.OPENAI_API_KEY) { res.status(503).json({ error: 'Chiave API mancante.' }); return; }
   const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 30000);
+  res.once('close', () => controller.abort());
   try {
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST', signal: controller.signal,

@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import { z } from 'zod';
@@ -15,6 +15,10 @@ app.use(cors({ origin: process.env.WEB_ORIGIN || 'http://localhost:5173' }));
 const messageSchema = z.object({
   mode: z.enum(['assistant', 'study']),
   messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().trim().min(1).max(6000) })).min(1).max(24)
+});
+
+config({
+  path: fileURLToPath(new URL('../.env', import.meta.url)),
 });
 
 // JSON persistente per il prototipo mono-utente; sostituire con DB autenticato per mobile/cloud.

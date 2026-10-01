@@ -1,0 +1,6 @@
+{
+  "name": "jarvis-personal-ai", "private": true, "version": "0.1.0",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {"dev":"concurrently -k -n API,WEB -c blue,cyan \"npm run dev -w @jarvis/api\" \"npm run dev -w @jarvis/web\"", "build":"npm run build -w @jarvis/api && npm run build -w @jarvis/web", "typecheck":"npm run typecheck -w @jarvis/api && npm run typecheck -w @jarvis/web"},
+  "devDependencies": {"concurrently":"^9.1.2", "typescript":"^5.8.3"}
+}

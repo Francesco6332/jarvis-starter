@@ -75,6 +75,6 @@ Il backend ascolta solo su `127.0.0.1`: questa versione è mono-utente e non aut
 
 Verifiche: `npm run typecheck`, `npm run build`, `npm test`. I test simulano Google/OpenAI e verificano permessi, OAuth, proposte, idempotenza, persistenza e streaming. Il collegamento reale richiede credenziali e consenso sul tuo computer.
 
-## v0.4 — Conversazione continua e briefing
+## v0.4 — Conversazione continua, memoria e ricerca web
 
-Apri **Conversazione continua** per parlare con voce AI Realtime, interrompere la risposta parlando e ricevere un briefing dai tuoi dati autorizzati. Microfono esplicito, strumenti con permessi e conferma manuale degli eventi. Sessioni di massimo 10 minuti con pagina aperta; consuma credito API. Configurazione e limiti in [docs/REALTIME.md](docs/REALTIME.md).
+Apri **Conversazione continua** per attivare l’ascolto della parola “Jarvis”. La sessione vocale parte solo dopo il richiamo e si chiude con frasi come “possiamo finire qui”. Può salvare ricordi espliciti, cercare notizie e fonti aggiornate, consigliare articoli e preparare un resoconto della giornata. Sessioni di massimo 10 minuti con pagina aperta; ricerca e voce consumano credito API. Configurazione e limiti in [docs/REALTIME.md](docs/REALTIME.md). La memoria persistente rende il comportamento più personale, mentre un apprendimento autonomo illimitato richiederebbe un sistema separato di valutazione, consenso e aggiornamento del modello.

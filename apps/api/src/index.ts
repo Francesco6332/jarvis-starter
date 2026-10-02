@@ -10,6 +10,7 @@ import { createCalendar } from './calendar.js';
 import { createWork } from './work.js';
 import { chatStream } from './agent.js';
 import { createRealtime } from './realtime.js';
+import { searchWeb } from './web.js';
 
 // Resolve beside the API package, whether running src/index.ts or dist/index.js.
 const envPath = fileURLToPath(new URL('../.env', import.meta.url));
@@ -45,11 +46,10 @@ const messageSchema = z.object({
 // JSON persistente per il prototipo mono-utente; sostituire con DB autenticato per mobile/cloud.
 const dataDir = process.env.JARVIS_DATA_DIR || join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
 const calendar = createCalendar(dataDir);
-const work = createWork(dataDir, calendar);
+const work = createWork(dataDir, calendar, searchWeb);
 app.use('/api/google', calendar.router);
 app.use('/api/workspace', work.router);
 app.post('/api/chat/stream', chatStream(work, readMemories));
-app.use('/api/realtime', createRealtime(work, readMemories).router);
 const memoryFile = join(dataDir, 'memory.json');
 const memorySchema = z.object({ id: z.string(), content: z.string().min(1).max(500), createdAt: z.string() });
 type Memory = z.infer<typeof memorySchema>;
@@ -62,6 +62,13 @@ async function writeMemories(items: Memory[]) {
   const tmp = memoryFile + '.tmp';
   await fs.writeFile(tmp, JSON.stringify(items, null, 2), { mode: 0o600 });
   await fs.rename(tmp, memoryFile);
+}
+async function rememberMemory(content: string) {
+  const parsed = memoryInput.safeParse({ content });
+  if (!parsed.success) throw new Error('Memoria non valida: massimo 500 caratteri.');
+  const item = { id: randomUUID(), content: parsed.data.content, createdAt: new Date().toISOString() };
+  await updateMemories(memories => [...memories, item].slice(-100));
+  return { saved: true, memory: item };
 }
 let memoryWrites: Promise<void> = Promise.resolve();
 function updateMemories(update: (items: Memory[]) => Memory[]) {
@@ -94,6 +101,7 @@ app.delete('/api/memory/:id', async (req, res) => {
   try { await updateMemories(memories => memories.filter(x => x.id !== req.params.id)); res.json({ ok: true }); }
   catch { res.status(500).json({ error: 'Impossibile eliminare la memoria.' }); }
 });
+app.use('/api/realtime', createRealtime(work, readMemories, fetch, rememberMemory).router);
 const assistantPrompt = `Sei JARVIS, un assistente personale in italiano: diretto, preciso, pragmatico e cordiale. Ti rivolgi all'utente come Francesco solo quando naturale. Non fingere di poter aprire programmi, accedere a mail o conoscere dati che non hai. Non eseguire azioni esterne: questa versione supporta chat, memoria esplicita e voce. Non dichiarare di avere coscienza né sensazioni umane. Conversa con naturalezza e fai al massimo una domanda pertinente alla volta. Se la richiesta richiede dati aggiornati o accesso al computer, dichiaralo. Rispondi nella lingua dell'utente.`;
 const studyPrompt = `${assistantPrompt}\nMODALITÀ STUDIO: aiuti uno studente universitario di Computer Science. Fai da tutor: spiega concetti con esempi, proponi domande di verifica ed esercizi, usa progressione a piccoli passi. Quando si tratta di assignment valutati, aiuta con metodo e feedback anziché sostituirti allo studente. Chiedi il livello solo quando è davvero necessario.`;
 

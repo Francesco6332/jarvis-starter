@@ -1,6 +1,6 @@
 import { api } from './api';
 export type VoiceState = 'connecting' | 'listening' | 'thinking' | 'speaking' | 'ended';
-type Callbacks = { state: (s: VoiceState) => void; transcript: (role: 'user' | 'assistant', text: string) => void; error: (message: string) => void; workspace: () => void; autoplay: () => void };
+type Callbacks = { state: (s: VoiceState) => void; transcript: (role: 'user' | 'assistant', text: string) => void; error: (message: string) => void; workspace: () => void; autoplay: () => void; endRequested?: () => void };
 export function completedCalls(event: any): { call_id: string; name: string; arguments: string }[] {
   return event.type === 'response.done' && event.response?.status === 'completed'
     ? (event.response.output || []).filter((x: any) => x.type === 'function_call' && x.status === 'completed' && typeof x.call_id === 'string' && typeof x.name === 'string' && typeof x.arguments === 'string') : [];
@@ -59,7 +59,12 @@ export class RealtimeVoice {
     if (event.type === 'response.created') { this.active = true; this.pending = false; this.callbacks.state('thinking'); }
     if (event.type === 'output_audio_buffer.started') this.callbacks.state('speaking');
     if (['output_audio_buffer.stopped', 'output_audio_buffer.cleared'].includes(event.type)) this.callbacks.state('listening');
-    if (event.type === 'conversation.item.input_audio_transcription.completed' && event.transcript) this.callbacks.transcript('user', event.transcript);
+    if (event.type === 'conversation.item.input_audio_transcription.completed' && event.transcript) {
+      this.callbacks.transcript('user', event.transcript);
+      if (/\b(possiamo|posso)\s+(finire|chiudere)\s+(qui|la conversazione)\b|\b(fine|termina|chiudi|spegni)\s+(la\s+)?conversazione\b|\bbuonanotte\s+jarvis\b/i.test(event.transcript)) {
+        this.interrupt(); this.callbacks.endRequested?.(); this.stop(); return;
+      }
+    }
     if (event.type === 'response.output_audio_transcript.done' && event.transcript) this.callbacks.transcript('assistant', event.transcript);
     if (event.type === 'error') { this.callbacks.error(event.error?.message || 'Errore della conversazione.'); }
     if (event.type !== 'response.done') return;

@@ -58,6 +58,24 @@ test('cancelled and incomplete voice responses cannot dispatch tools', () => {
   assert.equal(completedCalls({ type: 'response.done', response: { status: 'completed', output: [call] } }).length, 1);
 });
 
+test('explicit voice memory is saved through the backend callback', async t => {
+  const previous = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = 'test-key';
+  t.after(() => { if (previous === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = previous; });
+  let saved = '';
+  const realtime = createRealtime({ tools: async () => [], briefing: async () => ({}), execute: async () => ({}) }, async () => [], async (url, options) => {
+    if (url.endsWith('/hangup')) return new Response(null, { status: 200 });
+    return new Response('answer', { headers: { location: '/v1/realtime/calls/rtc_memory' } });
+  }, async content => { saved = content; return { saved: true, content }; });
+  const app = express(); app.use(express.json()); app.use(realtime.router);
+  const server = app.listen(0, '127.0.0.1'); await new Promise(r => server.once('listening', r));
+  t.after(async () => { await realtime.close(); await new Promise(r => server.close(r)); });
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const session = await (await fetch(`${base}/sessions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sdp: 'memory-sdp', mode: 'assistant' }) })).json();
+  const result = await fetch(`${base}/sessions/${session.id}/tools`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ callId: 'memory-call', name: 'remember_fact', arguments: JSON.stringify({ content: 'Preferisco risposte concise.' }) }) });
+  assert.equal(result.status, 200); assert.equal(saved, 'Preferisco risposte concise.');
+});
+
 test('closing while the microphone permission prompt is pending releases late tracks', async t => {
   const originals = new Map(['window', 'navigator', 'Audio'].map(k => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
   t.after(() => { for (const [key, descriptor] of originals) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key]; } });

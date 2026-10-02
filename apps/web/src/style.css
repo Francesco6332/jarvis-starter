@@ -4,3 +4,24 @@
 .wake-controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:20px 0}.wake-controls>span{font-size:12px;color:#88a4b7}.wake-on{border-color:#26bbf1!important;color:#60dfff!important;box-shadow:0 0 20px #20bfe822}.voice-error{padding:12px 16px;background:#5c2a2a55;border:1px solid #b15b5b88;border-radius:12px;color:#ffcbcb;display:flex;justify-content:space-between;align-items:center;margin:12px 0}.voice-error button,.memory-item button{border:0;background:transparent;color:inherit;cursor:pointer}.feature-button{background:transparent;border:0;color:inherit;font:inherit;text-align:left;display:flex;align-items:center;gap:12px;padding:8px 0;cursor:pointer;width:100%}.feature-button svg:last-child{margin-left:auto}.memory-panel{margin:16px 0;padding:22px}.memory-panel p,.memory-panel small{color:#91a9b9;font-size:13px}.memory-form{display:flex;gap:10px;margin:12px 0}.memory-form input{flex:1;background:#0d1e2a;color:#e6f7ff;border:1px solid #315166;border-radius:10px;padding:12px;min-width:0}.memory-items{display:grid;gap:8px;margin:12px 0}.memory-item{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#102737;border:1px solid #244354;padding:10px 14px;border-radius:10px;font-size:13px}.memory-item button{color:#b5d2e0}@media(max-width:650px){.memory-form{flex-direction:column}}
 
 .tools-disclosure{margin:20px 0;border:1px solid #244352;border-radius:14px;background:#0c1824}.tools-disclosure>summary{padding:16px;cursor:pointer;color:#91e9ff;font-size:14px}.work-panel{padding:0 18px 20px;color:#b9cbd7;font-size:14px}.work-panel p{line-height:1.6}.work-panel a{color:#70d8f5}.permission-grid{display:grid;gap:12px;margin:18px 0}.permission-grid label,.share-notes{display:flex;align-items:center;gap:10px}.work-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:14px 0}.work-panel small{display:block;line-height:1.6;color:#93a8b9}.proposal-card{padding:16px;margin:14px 0;border:1px solid #b59241;border-radius:10px;background:#24231c}.proposal-card strong{color:#f6d590}.task-form{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.task-form input,.task-form label{min-width:0}.task-form input{background:#101f2e;border:1px solid #365064;color:#e4f3fa;padding:10px;border-radius:8px;max-width:100%}.task-form>input{flex:1}.task-form label{font-size:12px;display:grid;gap:5px}.task-list>div{display:flex;gap:12px;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #233745}.task-list strong,.task-list small{overflow-wrap:anywhere}.task-list{margin:15px 0}.work-error{color:#ffb2a6}.study-upload{display:grid;gap:8px;margin:15px 0;font-size:13px}.share-notes{margin-top:15px;font-size:13px}.study-upload input{max-width:100%}.feature-list a{text-decoration:none;color:inherit}.work-panel .section-heading{flex-wrap:wrap;gap:12px}@media(max-width:600px){.task-form{align-items:stretch;flex-direction:column}.task-form input{width:100%}.work-panel .section-heading{font-size:11px}}
+
+/* Explicit foreground voice session. Native dialog keeps keyboard focus inside. */
+.conversation { width:min(760px,calc(100vw - 24px)); max-height:calc(100dvh - 24px); overflow:auto; border:1px solid #25546b; border-radius:24px; background:radial-gradient(ellipse at 50% 35%,#102c3e,#080e18 70%); color:#dcebf5; padding:28px; box-shadow:0 30px 120px #000b; }
+.conversation::backdrop { background:#02060ee8; backdrop-filter:blur(10px); }
+.conversation-top { display:flex; justify-content:space-between; align-items:center; font-size:11px; letter-spacing:2px; color:#83bacd; }
+.conversation h2 { text-align:center; font-size:36px; margin:22px 0 8px; }
+.conversation h2 + p,.conversation-state { text-align:center; }
+.conversation-core { height:240px; }
+.conversation-core canvas { width:100%; height:100%; }
+.conversation-state { color:#70e6ff; font-size:18px; }
+.conversation button { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 16px; border:1px solid #31556b; border-radius:12px; color:#dcebf5; background:#142638; cursor:pointer; }
+.conversation button:focus-visible { outline:2px solid #7feaff; outline-offset:3px; }
+.conversation .primary { background:#92e5f4; color:#06121d; font-weight:700; }
+.conversation-controls { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
+.conversation-start { text-align:center; }
+.conversation-start p,.conversation small { font-size:12px; line-height:1.6; color:#9aabba; }
+.conversation-start button { margin:6px; }
+.conversation-transcript { max-height:160px; overflow:auto; font-size:14px; line-height:1.6; margin:20px 0; }
+.conversation-transcript strong { color:#8cdaec; }
+.conversation-error { color:#ffbdad; text-align:center; }
+@media(max-width:600px) { .conversation { padding:18px; } .conversation-core { height:180px; } .conversation h2 { font-size:28px; } }

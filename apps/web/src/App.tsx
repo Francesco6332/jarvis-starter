@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Activity, ArrowUp, BookOpen, BrainCircuit, Check, ChevronRight, CircleHelp, Cpu, GraduationCap, Menu, Mic, MicOff, Plus, Settings2, Power, Trash2, Save, Sparkles, Volume2, VolumeX, X } from 'lucide-react';
 import { NeuralCore } from './components/NeuralCore';
 import { Workspace } from './components/Workspace';
+import { Conversation } from './components/Conversation';
 import { apiFetch, consumeEvents } from './lib/api';
 import { VoiceQueue, takeSpeechChunks } from './lib/voice';
 
@@ -16,6 +17,7 @@ interface SpeechRecognitionLike { lang:string; interimResults:boolean; continuou
 type SpeechWindow = Window & { SpeechRecognition?: new()=>SpeechRecognitionLike; webkitSpeechRecognition?: new()=>SpeechRecognitionLike };
 
 export default function App() {
+  const [conversationOpen, setConversationOpen] = useState(false);
   const [mode, setMode] = useState<Mode>('assistant');
   const [messages, setMessages] = useState<Message[]>(loadMessages);
   const [input, setInput] = useState('');
@@ -159,7 +161,13 @@ export default function App() {
   function changeMode(next:Mode) { setMode(next); setSidebarOpen(false); }
   sendRef.current=send;
   greetRef.current=greet;
+  function openConversation() {
+    wakeEnabledRef.current=false; setWakeEnabled(false); recognition.current?.stop(); recognitionActiveRef.current=false; setListening(false);
+    if(wakeTimerRef.current)clearTimeout(wakeTimerRef.current);
+    chatAbort.current?.abort(); stopAudio(); setConversationOpen(true);
+  }
   return <div className="app-shell">
+    {conversationOpen && <Conversation mode={mode} studyContext={mode==='study' && shareNotes ? notes.slice(0,30000) : ''} onClose={()=>setConversationOpen(false)} onWorkspace={()=>setWorkspaceRevision(v=>v+1)} onTranscript={(role,content)=>setMessages(old=>[...old,{id:crypto.randomUUID(),role,content}])}/>}
     <aside className={`sidebar ${sidebarOpen?'open':''}`}>
       <div className="brand"><div className="brand-mark"><BrainCircuit size={23}/></div><div><strong>J.A.R.V.I.S.</strong><small>PERSONAL AI SYSTEM</small></div><button className="icon-button mobile-close" onClick={()=>setSidebarOpen(false)} aria-label="Chiudi menu"><X size={20}/></button></div>
       <div className="sidebar-label">WORKSPACE</div>
@@ -176,11 +184,11 @@ export default function App() {
       <header className="topbar"><button className="icon-button menu-button" onClick={()=>setSidebarOpen(true)} aria-label="Apri menu"><Menu size={22}/></button><div className="breadcrumb">SYSTEM <span>/</span> <strong>{mode==='assistant'?'ASSISTANT':'STUDY LAB'}</strong></div><div className="topbar-right"><span className={`status-pill ${configured?'ready':'demo'}`}><span className="online-dot"/>{configured?'AI CONFIGURED':'DEMO MODE'}</span><button className="icon-button" title="Nuova conversazione" onClick={clearChat} aria-label="Nuova conversazione"><Plus size={20}/></button></div></header>
       <div className="workspace">
         <section className="hero" aria-label="Nucleo neurale di JARVIS">
-          <div className="hero-top"><span><span className="square"/> NEURAL ENGINE / V.03</span><span className="engine-state">{loading?'PROCESSING':listening?'WAKE WORD ACTIVE':awake?'AWAKE':'STANDBY'} <span className="blink"/></span></div>
+          <div className="hero-top"><span><span className="square"/> NEURAL ENGINE / V.04</span><span className="engine-state">{loading?'PROCESSING':listening?'WAKE WORD ACTIVE':awake?'AWAKE':'STANDBY'} <span className="blink"/></span></div>
           <div className="neural-wrap"><div className="target-circle target-one"/><div className="target-circle target-two"/><NeuralCore active={listening||awake} thinking={loading}/><div className="neural-center-label"><strong>{loading?'THINKING':listening?'LISTENING':'JARVIS'}</strong><span>{loading?'ELABORAZIONE':listening?'MICROFONO ATTIVO':'NEURAL CORE ONLINE'}</span></div></div>
           <div className="hero-bottom"><span>● {mode==='study'?'LEARNING PROTOCOL':'PERSONAL ASSISTANT'}</span><span>110 NODES · LIVE VISUALIZATION</span></div>
         </section>
-        <div className="wake-controls"><button className={`secondary-button ${wakeEnabled?'wake-on':''}`} onClick={enableWake}><Power size={17}/>{wakeEnabled?'Disattiva «Hey Jarvis»':'Attiva «Hey Jarvis»'}</button><button className="secondary-button" disabled={loading} onClick={greet}><Mic size={17}/> Saluta JARVIS</button><span>{wakeEnabled?'In ascolto finché questa scheda resta attiva':'Attiva il microfono per chiamarlo per nome'}</span></div>
+        <div className="wake-controls"><button className="secondary-button" onClick={openConversation} disabled={!configured}><Mic size={17}/> Conversazione continua</button><button className={`secondary-button ${wakeEnabled?'wake-on':''}`} onClick={enableWake}><Power size={17}/>{wakeEnabled?'Disattiva «Hey Jarvis»':'Attiva «Hey Jarvis»'}</button><button className="secondary-button" disabled={loading} onClick={greet}><Mic size={17}/> Saluta JARVIS</button><span>{wakeEnabled?'In ascolto finché questa scheda resta attiva':'Attiva il microfono per chiamarlo per nome'}</span></div>
         {voiceError&&<div className="voice-error" role="alert">{voiceError}<button onClick={()=>setVoiceError('')} aria-label="Chiudi avviso"><X size={16}/></button></div>}
         <details id="workspace-tools" className="tools-disclosure" open><summary>Google Calendar · Permessi · Attività di studio</summary><Workspace revision={workspaceRevision} onResult={content=>{chatAbort.current?.abort();setMessages(old=>[...old,{id:crypto.randomUUID(),role:'assistant',content}]);if(!loadingRef.current)speak(content);}}/></details>
         {memoryVisible&&<section className="notes-panel memory-panel"><div className="section-heading"><BrainCircuit size={17}/> MEMORIA DI JARVIS <span>{memories.length} ricordi</span></div><p>Salva solo ciò che vuoi che JARVIS ricordi. Scrivi anche in chat «Ricorda che...». Puoi eliminare ogni ricordo.</p><form onSubmit={e=>{e.preventDefault();void addMemory();}} className="memory-form"><input value={memoryText} maxLength={500} onChange={e=>setMemoryText(e.target.value)} placeholder="Es. Studio Computer Science all'università"/><button type="submit" className="secondary-button" disabled={!memoryText.trim()}><Save size={16}/> Ricorda</button></form><div className="memory-items">{memories.map(m=><div key={m.id} className="memory-item"><span>{m.content}</span><button aria-label="Elimina ricordo" title="Elimina ricordo" onClick={()=>void removeMemory(m.id)}><Trash2 size={16}/></button></div>)}</div><small>Memoria privata locale al backend, non ancora sincronizzata tra dispositivi.</small></section>}

@@ -1,4 +1,4 @@
-# J.A.R.V.I.S. — Personal AI (v0.3)
+# J.A.R.V.I.S. — Personal AI (v0.4)
 
 Prototipo funzionante con **React + TypeScript + Vite** e un backend **Node.js + Express**. Ha una rete neurale astratta animata su Canvas, chat, modalità studio, appunti locali, dettatura (nei browser compatibili) e risposta vocale opzionale.
 
@@ -8,14 +8,13 @@ Prerequisiti: Node.js 20+ e npm.
 
 ```bash
 npm install
-cp apps/api/.env.example apps/api/.env
-# Inserisci OPENAI_API_KEY nel file apps/api/.env
+# Crea apps/api/.env e inserisci OPENAI_API_KEY=la_tua_chiave
 npm run dev
 ```
 
 Apri `http://localhost:5173`. Se non inserisci la chiave API, l'interfaccia funziona in **modalità demo** e il server risponde con messaggi dimostrativi.
 
-**Windows PowerShell**: `Copy-Item apps/api/.env.example apps/api/.env`
+Crea il file `.env` con il tuo editor senza sovrascrivere eventuali impostazioni esistenti.
 
 ## Sicurezza e privacy
 
@@ -69,9 +68,13 @@ Il backend ascolta solo su `127.0.0.1`: questa versione è mono-utente e non aut
 - Apri **Permessi e attività**: collega Google, abilita separatamente gli strumenti e conferma le proposte di eventi nella scheda. Configurazione completa in [docs/GOOGLE_CALENDAR.md](docs/GOOGLE_CALENDAR.md).
 - Le attività di studio possono essere create e completate dalla chat o dal pannello, con persistenza locale e avvisi browser mentre la pagina è aperta.
 - In **Studio → I miei appunti**, importa un testo `.txt`/`.md` o incolla un estratto (massimo 30.000 caratteri), quindi attiva la condivisione per usarlo come contesto. Puoi chiedere spiegazioni, quiz e un piano di ripasso. Non c’è ancora estrazione PDF, ricerca semantica o sincronizzazione.
-- La chat arriva progressivamente via SSE. La voce `onyx` viene generata per brevi frasi, con preparazione anticipata della successiva: può iniziare prima che la risposta sia completa. Non è ancora una sessione Realtime full-duplex; usa **Interrompi risposta e voce** per fermarla. La latenza reale dipende dalla connessione e dai servizi AI e va misurata sul dispositivo.
+- La chat arriva progressivamente via SSE. La voce `onyx` viene generata per brevi frasi, con preparazione anticipata della successiva: può iniziare prima che la risposta sia completa. Questa modalità testuale con TTS è distinta dalla conversazione Realtime v0.4; usa **Interrompi risposta e voce** per fermarla. La latenza reale dipende dalla connessione e dai servizi AI e va misurata sul dispositivo.
 - Senza chiave API si usa il fallback vocale del browser, evitando richieste TTS in errore. Le voci disponibili sul dispositivo non sono necessariamente maschili.
 - Backend locale con controllo Host/Origin e header anti-CSRF sulle scritture. I token restano sul server, fuori da Git; sul disco sono in chiaro. Non è un sistema multi-utente o pronto per Internet.
 - La correzione `.env` risolve il percorso rispetto al pacchetto API, sia in `src` che in `dist`, e stampa una diagnosi senza la chiave.
 
 Verifiche: `npm run typecheck`, `npm run build`, `npm test`. I test simulano Google/OpenAI e verificano permessi, OAuth, proposte, idempotenza, persistenza e streaming. Il collegamento reale richiede credenziali e consenso sul tuo computer.
+
+## v0.4 — Conversazione continua e briefing
+
+Apri **Conversazione continua** per parlare con voce AI Realtime, interrompere la risposta parlando e ricevere un briefing dai tuoi dati autorizzati. Microfono esplicito, strumenti con permessi e conferma manuale degli eventi. Sessioni di massimo 10 minuti con pagina aperta; consuma credito API. Configurazione e limiti in [docs/REALTIME.md](docs/REALTIME.md).

@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { createCalendar } from './calendar.js';
 import { createWork } from './work.js';
 import { chatStream } from './agent.js';
+import { createRealtime } from './realtime.js';
 
 // Resolve beside the API package, whether running src/index.ts or dist/index.js.
 const envPath = fileURLToPath(new URL('../.env', import.meta.url));
@@ -40,9 +41,6 @@ const messageSchema = z.object({
   messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().trim().min(1).max(6000) })).min(1).max(24)
 });
 
-config({
-  path: fileURLToPath(new URL('../.env', import.meta.url)),
-});
 
 // JSON persistente per il prototipo mono-utente; sostituire con DB autenticato per mobile/cloud.
 const dataDir = process.env.JARVIS_DATA_DIR || join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
@@ -51,6 +49,7 @@ const work = createWork(dataDir, calendar);
 app.use('/api/google', calendar.router);
 app.use('/api/workspace', work.router);
 app.post('/api/chat/stream', chatStream(work, readMemories));
+app.use('/api/realtime', createRealtime(work, readMemories).router);
 const memoryFile = join(dataDir, 'memory.json');
 const memorySchema = z.object({ id: z.string(), content: z.string().min(1).max(500), createdAt: z.string() });
 type Memory = z.infer<typeof memorySchema>;

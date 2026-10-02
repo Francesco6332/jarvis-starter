@@ -99,5 +99,17 @@ export function createWork(dataDir: string, calendar: ReturnType<typeof createCa
     const p = (await store.read()).permissions;
     return definitions.filter(t => t.function.name === 'list_calendar_events' ? p.calendarRead : t.function.name === 'propose_calendar_event' ? p.calendarWrite : p.studyTasks);
   }
-  return { router, execute, tools, confirm };
+  async function briefing() {
+    const state = await store.read();
+    let agenda: unknown = { status: 'permission_disabled' };
+    if (state.permissions.calendarRead) {
+      try {
+        agenda = (await calendar.status()).connected
+          ? { status: 'ready', events: await execute('list_calendar_events', { start: new Date().toISOString(), end: new Date(Date.now() + 86400000).toISOString() }) }
+          : { status: 'disconnected' };
+      } catch { agenda = { status: 'unavailable' }; }
+    }
+    return { nextHours: 24, agenda, study: state.permissions.studyTasks ? { status: 'ready', tasks: state.tasks.filter(t => !t.done).slice(0, 10) } : { status: 'permission_disabled' } };
+  }
+  return { router, execute, tools, confirm, briefing };
 }

@@ -1,10 +1,10 @@
 {
   "name": "@jarvis/web",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "vite --host localhost --strictPort",
     "build": "tsc -b && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "preview": "vite preview"

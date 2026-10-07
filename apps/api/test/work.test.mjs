@@ -129,7 +129,7 @@ test('voice queue cancels pending audio and plays prefetched phrases in order', 
   globalThis.fetch = async (_url, options) => {
     requests.push(JSON.parse(options.body).text);
     await new Promise(r => setTimeout(r, 15));
-    return new Response(new Blob(['audio'], { type: 'audio/mpeg' }));
+    return Response.json({ id: String(requests.length), url: `/api/speech/${requests.length}` }, { status: 201 });
   };
   const queue = new VoiceQueue(active => states.push(active), error => assert.fail(error), () => true);
   queue.enqueue('Da annullare.'); queue.stop();

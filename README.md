@@ -1,4 +1,4 @@
-# J.A.R.V.I.S. — Personal AI (v0.4)
+# J.A.R.V.I.S. — Personal AI (v0.5)
 
 Prototipo funzionante con **React + TypeScript + Vite** e un backend **Node.js + Express**. Ha una rete neurale astratta animata su Canvas, chat, modalità studio, appunti locali, dettatura (nei browser compatibili) e risposta vocale opzionale.
 
@@ -78,3 +78,11 @@ Verifiche: `npm run typecheck`, `npm run build`, `npm test`. I test simulano Goo
 ## v0.4 — Conversazione continua, memoria e ricerca web
 
 Apri **Conversazione continua** per attivare l’ascolto della parola “Jarvis”. La sessione vocale parte solo dopo il richiamo e si chiude con frasi come “possiamo finire qui”. Può salvare ricordi espliciti, cercare notizie e fonti aggiornate, consigliare articoli e preparare un resoconto della giornata. Sessioni di massimo 10 minuti con pagina aperta; ricerca e voce consumano credito API. Configurazione e limiti in [docs/REALTIME.md](docs/REALTIME.md). La memoria persistente rende il comportamento più personale, mentre un apprendimento autonomo illimitato richiederebbe un sistema separato di valutazione, consenso e aggiornamento del modello.
+
+## v0.5 — Chiamalo per nome
+
+- Un solo comando vocale: attiva **«Jarvis»**, pronuncia il suo nome (anche seguito da una domanda) e la conversazione si apre a tutto schermo. Si chiude da sola con “basta così” o “possiamo finire qui” e torna in ascolto. Dettagli in [docs/REALTIME.md](docs/REALTIME.md).
+- Nuova schermata vocale con anelli HUD, colori per stato (ascolto, elaborazione, risposta), nucleo che reagisce al volume e sottotitoli live.
+- Correzioni: la wake word non si spegne più dopo un silenzio, il riconoscimento dentro la conversazione funzionava solo in teoria (`isFinal` letto nel punto sbagliato), riaprire subito la conversazione non dà più “conversazione già attiva”, la pagina non scorre più fino alla chat al caricamento e l’animazione non riparte da zero a ogni cambio di stato.
+- Voce più rapida: `POST /api/speech` avvia subito la sintesi e restituisce un id, `GET /api/speech/:id` trasmette l’MP3 mentre viene generato, così la riproduzione parte ai primi byte. Le frasi in coda vengono accorpate per un’intonazione più naturale; link, markdown ed emoji non vengono letti. Voce configurabile con `OPENAI_TTS_VOICE` (predefinita `onyx`).
+- Ascolto più affidabile: dettatura che non si chiude subito con la wake word attiva, nessuna attivazione da un «Jarvis» poi corretto dal riconoscimento, «basta»/«stop» interrompono senza chiudere, riduzione eco `far_field` (`OPENAI_REALTIME_NOISE=near_field` con le cuffie) e turni meno impazienti.

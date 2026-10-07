@@ -11,6 +11,7 @@ import { createWork } from './work.js';
 import { chatStream } from './agent.js';
 import { createRealtime } from './realtime.js';
 import { searchWeb } from './web.js';
+import { createSpeech } from './speech.js';
 
 // Resolve beside the API package, whether running src/index.ts or dist/index.js.
 const envPath = fileURLToPath(new URL('../.env', import.meta.url));
@@ -105,26 +106,7 @@ app.use('/api/realtime', createRealtime(work, readMemories, fetch, rememberMemor
 const assistantPrompt = `Sei JARVIS, un assistente personale in italiano: diretto, preciso, pragmatico e cordiale. Ti rivolgi all'utente come Francesco solo quando naturale. Non fingere di poter aprire programmi, accedere a mail o conoscere dati che non hai. Non eseguire azioni esterne: questa versione supporta chat, memoria esplicita e voce. Non dichiarare di avere coscienza né sensazioni umane. Conversa con naturalezza e fai al massimo una domanda pertinente alla volta. Se la richiesta richiede dati aggiornati o accesso al computer, dichiaralo. Rispondi nella lingua dell'utente.`;
 const studyPrompt = `${assistantPrompt}\nMODALITÀ STUDIO: aiuti uno studente universitario di Computer Science. Fai da tutor: spiega concetti con esempi, proponi domande di verifica ed esercizi, usa progressione a piccoli passi. Quando si tratta di assignment valutati, aiuta con metodo e feedback anziché sostituirti allo studente. Chiedi il livello solo quando è davvero necessario.`;
 
-app.post('/api/speech', async (req, res) => {
-  const parsed = z.object({ text: z.string().trim().min(1).max(1800) }).safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: 'Testo non valido.' }); return; }
-  if (!process.env.OPENAI_API_KEY) { res.status(503).json({ error: 'Chiave API mancante.' }); return; }
-  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 30000);
-  res.once('close', () => controller.abort());
-  try {
-    const response = await fetch('https://api.openai.com/v1/audio/speech', {
-      method: 'POST', signal: controller.signal,
-      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts', voice: 'onyx',
-        instructions: 'Parla in italiano con voce maschile adulta, calda, spontanea e nitida. Conversazione naturale, ritmo moderato, brevi pause espressive, nessun tono robotico.',
-        input: parsed.data.text, response_format: 'mp3' })
-    });
-    if (!response.ok) { console.error('TTS error', response.status); res.status(502).json({ error: 'Sintesi vocale non disponibile.' }); return; }
-    res.setHeader('Content-Type', 'audio/mpeg'); res.setHeader('Cache-Control', 'no-store');
-    res.send(Buffer.from(await response.arrayBuffer()));
-  } catch { res.status(504).json({ error: 'Timeout generazione voce.' }); }
-  finally { clearTimeout(timeout); }
-});
+app.use('/api/speech', createSpeech().router);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, configured: Boolean(process.env.OPENAI_API_KEY) }));
 app.post('/api/chat', async (req, res) => {
